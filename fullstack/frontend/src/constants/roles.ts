@@ -24,9 +24,7 @@ export const roleDisplayNames: Record<RoleName, string> = {
   ADMINISTRATOR: "Administrator",
 };
 
-export const resolvePrimaryRole = (
-  roles: RoleName[],
-): RoleName | null =>
+export const resolvePrimaryRole = (roles: RoleName[]): RoleName | null =>
   rolePriority.find((role) => roles.includes(role)) ?? roles[0] ?? null;
 
 export const resolveRoleHomePath = (roles: RoleName[]): string | null => {
