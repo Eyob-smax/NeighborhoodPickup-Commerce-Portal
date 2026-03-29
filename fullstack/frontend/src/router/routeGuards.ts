@@ -19,6 +19,22 @@ type AuthStoreLike = {
   initialize: () => Promise<void>;
 };
 
+export const isRouteAccessibleForRoles = (params: {
+  isPublic: boolean;
+  requiredRoles: RoleName[];
+  userRoles: RoleName[];
+}): boolean => {
+  if (params.isPublic) {
+    return true;
+  }
+
+  if (params.requiredRoles.length === 0) {
+    return true;
+  }
+
+  return params.requiredRoles.some((role) => params.userRoles.includes(role));
+};
+
 export const resolveAuthNavigation = async (params: {
   to: RouteLike;
   authStore: AuthStoreLike;
@@ -50,11 +66,11 @@ export const resolveAuthNavigation = async (params: {
   }
 
   const requiredRoles = to.meta.roles ?? [];
-  if (requiredRoles.length === 0) {
-    return true;
-  }
-
-  const allowed = requiredRoles.some((role) => authStore.roles.includes(role));
+  const allowed = isRouteAccessibleForRoles({
+    isPublic: false,
+    requiredRoles,
+    userRoles: authStore.roles,
+  });
   if (!allowed) {
     return {
       path: "/forbidden",

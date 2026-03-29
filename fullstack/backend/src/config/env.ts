@@ -4,7 +4,10 @@ dotenv.config();
 
 const isStrictEnv = (process.env.NODE_ENV ?? "development") === "production";
 
-const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean => {
+const parseBooleanEnv = (
+  value: string | undefined,
+  fallback: boolean,
+): boolean => {
   if (value === undefined) {
     return fallback;
   }
@@ -34,11 +37,32 @@ const getEnv = (key: string, fallback: string): string => {
   return fallback;
 };
 
+const parseOriginList = (value: string | undefined): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+};
+
+const configuredFrontendOrigins = parseOriginList(process.env.FRONTEND_ORIGINS);
+const legacyFrontendOrigin = process.env.FRONTEND_ORIGIN?.trim();
+const frontendOrigins =
+  configuredFrontendOrigins.length > 0
+    ? configuredFrontendOrigins
+    : legacyFrontendOrigin
+      ? [legacyFrontendOrigin]
+      : ["http://localhost:5173", "http://localhost:8081"];
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? 4000),
   isProduction: isStrictEnv,
-  frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:5173",
+  frontendOrigin: frontendOrigins[0],
+  frontendOrigins,
   db: {
     host: getEnv("DB_HOST", "127.0.0.1"),
     port: Number(getEnv("DB_PORT", "3306")),

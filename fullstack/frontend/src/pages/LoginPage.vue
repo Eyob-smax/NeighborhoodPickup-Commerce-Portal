@@ -54,6 +54,8 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 import { resolveRoleHomePath } from "../constants/roles";
+import type { RoleName } from "../types/auth";
+import { isRouteAccessibleForRoles } from "../router/routeGuards";
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -88,9 +90,28 @@ const onSubmit = async () => {
     return;
   }
 
-  const redirect = typeof route.query.redirect === "string"
-    ? route.query.redirect
-    : homePath;
+  const redirect = (() => {
+    const requestedRedirect =
+      typeof route.query.redirect === "string" ? route.query.redirect : "";
+
+    if (!requestedRedirect || !requestedRedirect.startsWith("/")) {
+      return homePath;
+    }
+
+    const resolved = router.resolve(requestedRedirect);
+    if (resolved.matched.length === 0 || resolved.path === "/login") {
+      return homePath;
+    }
+
+    const routeRoles = resolved.meta.roles as RoleName[] | undefined;
+    const isAllowed = isRouteAccessibleForRoles({
+      isPublic: Boolean(resolved.meta.public),
+      requiredRoles: routeRoles ?? [],
+      userRoles: authStore.roles,
+    });
+
+    return isAllowed ? requestedRedirect : homePath;
+  })();
 
   await router.replace(redirect);
 };

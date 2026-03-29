@@ -47,7 +47,7 @@ export const csrfOriginGuard = (
     return;
   }
 
-  if (requestOrigin !== env.frontendOrigin) {
+  if (!env.frontendOrigins.includes(requestOrigin)) {
     response.status(403).json({
       error: "CSRF origin check failed.",
       code: "CSRF_ORIGIN_MISMATCH",

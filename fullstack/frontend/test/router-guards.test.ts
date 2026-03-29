@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveAuthNavigation } from "../src/router/routeGuards";
+import {
+  isRouteAccessibleForRoles,
+  resolveAuthNavigation,
+} from "../src/router/routeGuards";
 import type { RoleName } from "../src/types/auth";
 
 const createAuthStore = (params: {
@@ -19,6 +22,36 @@ const createAuthStore = (params: {
 };
 
 describe("route auth guards", () => {
+  it("allows public routes regardless of user roles", () => {
+    const result = isRouteAccessibleForRoles({
+      isPublic: true,
+      requiredRoles: ["ADMINISTRATOR"],
+      userRoles: ["MEMBER"],
+    });
+
+    expect(result).toBe(true);
+  });
+
+  it("blocks access when required roles do not overlap", () => {
+    const result = isRouteAccessibleForRoles({
+      isPublic: false,
+      requiredRoles: ["FINANCE_CLERK"],
+      userRoles: ["MEMBER"],
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it("allows access when at least one required role is present", () => {
+    const result = isRouteAccessibleForRoles({
+      isPublic: false,
+      requiredRoles: ["FINANCE_CLERK", "ADMINISTRATOR"],
+      userRoles: ["FINANCE_CLERK"],
+    });
+
+    expect(result).toBe(true);
+  });
+
   it("redirects unauthenticated users to login with a redirect target", async () => {
     const authStore = createAuthStore({
       initialized: true,

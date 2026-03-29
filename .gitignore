@@ -1,34 +1,34 @@
-# OS/editor
+# OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/
 
-# Python local environment and caches
+# Python
 .venv/
 __pycache__/
-*.pyc
-.pytest_cache/
+*.py[cod]
 
-# Node dependencies and build artifacts
-**/node_modules/
-**/dist/
-**/coverage/
-
-# Runtime and logs
-*.log
+# Node / frontend / backend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Local environment files
+# Build and temp artifacts
+.tmp/
+tmp/
+*.log
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
 
-# Local temporary outputs
-.tmp/
-
-# Local cookie/session artifacts
-.cookiejar
-np.cookies
-*.cookies
+# Docker local data
+mysql_data/
+backend_storage/

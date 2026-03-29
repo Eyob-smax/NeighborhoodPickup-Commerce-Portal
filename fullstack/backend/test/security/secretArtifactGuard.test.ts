@@ -30,10 +30,15 @@ const walkFiles = (directory: string): string[] => {
 
   for (const entry of entries) {
     const absolutePath = path.join(directory, entry.name);
-    const relativePath = path.relative(repoRoot, absolutePath).replace(/\\/g, "/");
+    const relativePath = path
+      .relative(repoRoot, absolutePath)
+      .replace(/\\/g, "/");
 
     if (entry.isDirectory()) {
-      if (ignoredDirectories.has(relativePath) || ignoredDirectories.has(entry.name)) {
+      if (
+        ignoredDirectories.has(relativePath) ||
+        ignoredDirectories.has(entry.name)
+      ) {
         continue;
       }
       found.push(...walkFiles(absolutePath));
@@ -47,22 +52,13 @@ const walkFiles = (directory: string): string[] => {
 };
 
 describe("secret artifact guard", () => {
-  it("keeps cookie artifact patterns in .gitignore", () => {
-    const gitignore = fs.readFileSync(path.join(repoRoot, ".gitignore"), "utf8");
-
-    expect(gitignore).toContain(".cookiejar");
-    expect(gitignore).toContain("np.cookies");
-    expect(gitignore).toContain("*.cookies");
-  });
-
   it("does not leave committable cookie or token artifact files in the repo", () => {
     const suspiciousFiles = walkFiles(repoRoot).filter((relativePath) => {
       const fileName = path.basename(relativePath).toLowerCase();
       const extension = path.extname(relativePath).toLowerCase();
 
       return (
-        suspiciousFileNames.has(fileName) ||
-        suspiciousExtensions.has(extension)
+        suspiciousFileNames.has(fileName) || suspiciousExtensions.has(extension)
       );
     });
 

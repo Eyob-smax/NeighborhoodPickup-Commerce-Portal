@@ -31,17 +31,13 @@ const logUnhandledError = (params: {
       ? params.error.stack
       : undefined;
 
-  logger.error(
-    "http.unhandled_error",
-    message,
-    {
-      method: params.request.method,
-      path: params.request.originalUrl,
-      userId: params.request.auth?.userId ?? null,
-      requestId: params.request.header("x-request-id") ?? null,
-      stack,
-    },
-  );
+  logger.error("http.unhandled_error", message, {
+    method: params.request.method,
+    path: params.request.originalUrl,
+    userId: params.request.auth?.userId ?? null,
+    requestId: params.request.header("x-request-id") ?? null,
+    stack,
+  });
 };
 
 export const createApp = () => {
@@ -51,7 +47,14 @@ export const createApp = () => {
 
   app.use(
     cors({
-      origin: env.frontendOrigin,
+      origin: (origin, callback) => {
+        if (!origin || env.frontendOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(null, false);
+      },
       credentials: true,
     }),
   );
