@@ -79,7 +79,7 @@ services:
   tests:
     build:
       context: ..
-      dockerfile: fullstack/Dockerfile.tests
+      dockerfile: repo/Dockerfile.tests
     profiles: ["test"]
     depends_on:
       backend:
