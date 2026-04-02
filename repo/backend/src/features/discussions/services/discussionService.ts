@@ -26,6 +26,7 @@ import { logger } from "../../../utils/logger";
 const mentionRegex = /@([a-zA-Z0-9_]{2,64})/g;
 
 const orderThreadElevatedRoles = new Set<RoleName>([
+  "REVIEWER",
   "FINANCE_CLERK",
   "ADMINISTRATOR",
 ]);

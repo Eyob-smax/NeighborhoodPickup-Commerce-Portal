@@ -78,6 +78,46 @@ const decodeBase64File = (file: AppealUploadInputFile): Buffer => {
   return binary;
 };
 
+const hasBinaryPrefix = (binary: Buffer, bytes: number[]): boolean => {
+  if (binary.byteLength < bytes.length) {
+    return false;
+  }
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    if (binary[index] !== bytes[index]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const assertFileSignatureMatchesMimeType = (params: {
+  mimeType: AppealUploadInputFile["mimeType"];
+  binary: Buffer;
+}): void => {
+  const signatureMatches =
+    (params.mimeType === "application/pdf" &&
+      hasBinaryPrefix(params.binary, [0x25, 0x50, 0x44, 0x46, 0x2d])) ||
+    (params.mimeType === "image/jpeg" &&
+      hasBinaryPrefix(params.binary, [0xff, 0xd8, 0xff])) ||
+    (params.mimeType === "image/png" &&
+      hasBinaryPrefix(params.binary, [
+        0x89,
+        0x50,
+        0x4e,
+        0x47,
+        0x0d,
+        0x0a,
+        0x1a,
+        0x0a,
+      ]));
+
+  if (!signatureMatches) {
+    throw new Error("FILE_SIGNATURE_MISMATCH");
+  }
+};
+
 const hasElevatedAppealAccess = (roles: string[]): boolean =>
   roles.some((role) => ["REVIEWER", "ADMINISTRATOR"].includes(role));
 
@@ -261,6 +301,11 @@ export const uploadAppealFiles = async (params: {
     if (binary.byteLength > MAX_FILE_BYTES) {
       throw new Error("FILE_TOO_LARGE");
     }
+
+    assertFileSignatureMatchesMimeType({
+      mimeType: file.mimeType,
+      binary,
+    });
 
     const checksum = crypto.createHash("sha256").update(binary).digest("hex");
     const safeName = sanitizeFileName(file.fileName || "upload.bin");

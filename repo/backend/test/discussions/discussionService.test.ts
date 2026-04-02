@@ -131,26 +131,30 @@ describe("discussion service", () => {
     expect(mockedRepo.getThreadCommentsPage).toHaveBeenCalled();
   });
 
-  it("blocks reviewer access to order thread they do not own", async () => {
+  it("allows reviewer access to order thread without ownership", async () => {
     mockedRepo.getDiscussionById.mockResolvedValue({
       id: 103,
       contextType: "ORDER",
       contextId: 89,
     });
-    mockedRepo.isOrderOwnedByUser.mockResolvedValue(false);
+    mockedRepo.getThreadCommentsPage.mockResolvedValue({
+      total: 1,
+      comments: [],
+    });
 
-    await expect(
-      getThreadComments({
-        discussionId: 103,
-        page: 1,
-        sort: "newest",
-        userId: 15,
-        roles: ["REVIEWER"],
-      }),
-    ).rejects.toThrow("THREAD_FORBIDDEN");
+    await getThreadComments({
+      discussionId: 103,
+      page: 1,
+      sort: "newest",
+      userId: 15,
+      roles: ["REVIEWER"],
+    });
+
+    expect(mockedRepo.isOrderOwnedByUser).not.toHaveBeenCalled();
+    expect(mockedRepo.getThreadCommentsPage).toHaveBeenCalled();
   });
 
-  it("blocks unauthorized flagging on another user's order thread", async () => {
+  it("blocks group leader flagging on another user's order thread", async () => {
     mockedRepo.findCommentById.mockResolvedValue({
       id: 500,
       discussionId: 99,
@@ -171,7 +175,7 @@ describe("discussion service", () => {
       flagComment({
         commentId: 500,
         flaggedByUserId: 45,
-        roles: ["REVIEWER"],
+        roles: ["GROUP_LEADER"],
         reason: "Not acceptable",
       }),
     ).rejects.toThrow("THREAD_FORBIDDEN");

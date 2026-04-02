@@ -3,3 +3,4 @@
 np.cookies
 *.cookies
 /.tmp/*
+node_modules

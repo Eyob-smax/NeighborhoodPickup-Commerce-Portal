@@ -8,6 +8,7 @@
       <button @click="loadNotifications">Refresh</button>
     </div>
 
+    <p v-if="threadAccessNotice" class="error-text">{{ threadAccessNotice }}</p>
     <p v-if="error" class="error-text">{{ error }}</p>
 
     <div v-if="loading" class="muted">Loading notifications...</div>
@@ -26,11 +27,13 @@
               Mark {{ item.readState === 'READ' ? 'Unread' : 'Read' }}
             </button>
             <router-link
+              v-if="!isDeniedThread(item.discussionId)"
               class="link-btn"
               :to="{ name: 'discussion-thread', params: { id: String(item.discussionId) } }"
             >
               Open Thread
             </router-link>
+            <span v-else class="small-text muted">Unavailable for your role</span>
           </div>
         </div>
       </article>
@@ -46,8 +49,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { discussionApi } from '../api/discussionApi';
 import type { NotificationItem } from '../types/discussion';
+
+const route = useRoute();
 
 const loading = ref(false);
 const error = ref('');
@@ -56,6 +62,21 @@ const total = ref(0);
 const notifications = ref<NotificationItem[]>([]);
 
 const maxPage = computed(() => Math.max(1, Math.ceil(total.value / 20)));
+const deniedThreadId = computed(() => Number(route.query.deniedThreadId ?? 0));
+const threadAccessNotice = computed(() => {
+  if (route.query.threadAccessDenied !== '1') {
+    return '';
+  }
+
+  if (deniedThreadId.value > 0) {
+    return `Thread #${deniedThreadId.value} is restricted by role policy for ORDER discussions.`;
+  }
+
+  return 'This thread is restricted by role policy for ORDER discussions.';
+});
+
+const isDeniedThread = (discussionId: number) =>
+  deniedThreadId.value > 0 && deniedThreadId.value === discussionId;
 
 const loadNotifications = async () => {
   loading.value = true;

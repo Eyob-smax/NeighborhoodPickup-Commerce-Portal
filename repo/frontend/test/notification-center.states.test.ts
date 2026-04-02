@@ -7,6 +7,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getNotificationsMock = vi.hoisted(() => vi.fn());
 const setNotificationReadStateMock = vi.hoisted(() => vi.fn());
+const routeState = vi.hoisted(() => ({
+  query: {} as Record<string, string>,
+}));
+
+vi.mock("vue-router", () => ({
+  useRoute: () => routeState,
+}));
 
 vi.mock("../src/api/discussionApi", () => ({
   discussionApi: {
@@ -26,6 +33,7 @@ describe("NotificationCenterPage states", () => {
   beforeEach(() => {
     getNotificationsMock.mockReset();
     setNotificationReadStateMock.mockReset();
+    routeState.query = {};
   });
 
   it("shows empty state when no notifications are returned", async () => {
@@ -105,5 +113,46 @@ describe("NotificationCenterPage states", () => {
     await toggleButton!.trigger("click");
 
     expect(setNotificationReadStateMock).toHaveBeenCalledWith(99, "READ");
+  });
+
+  it("shows role-policy notice and suppresses reopen link for denied thread", async () => {
+    routeState.query = {
+      threadAccessDenied: "1",
+      deniedThreadId: "5",
+    };
+
+    getNotificationsMock.mockResolvedValue({
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      data: [
+        {
+          id: 100,
+          notificationType: "REPLY",
+          sourceCommentId: 18,
+          discussionId: 5,
+          message: "new reply",
+          readState: "UNREAD",
+          createdAt: "2026-03-29T12:00:00.000Z",
+          readAt: null,
+        },
+      ],
+    });
+
+    const wrapper = mount(NotificationCenterPage, {
+      global: {
+        stubs: {
+          RouterLink: true,
+        },
+      },
+    });
+
+    await flush();
+
+    expect(wrapper.text()).toContain(
+      "Thread #5 is restricted by role policy for ORDER discussions.",
+    );
+    expect(wrapper.text()).toContain("Unavailable for your role");
+    expect(wrapper.text()).not.toContain("Open Thread");
   });
 });

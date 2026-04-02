@@ -109,6 +109,41 @@ describe("appeal service", () => {
     expect(mockedRepo.insertAppealFile).not.toHaveBeenCalled();
   });
 
+  it("rejects files when declared mime type does not match binary signature", async () => {
+    mockedRepo.findAppealById.mockResolvedValue({
+      id: 10,
+      submittedByUserId: 1,
+      sourceType: "ORDER_DETAIL",
+      sourceCommentId: null,
+      sourceOrderId: 9,
+      reasonCategory: "ORDER_ISSUE",
+      narrative: "Need support",
+      referencesText: null,
+      status: "INTAKE",
+      currentEventAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    mockedRepo.countAppealFiles.mockResolvedValue(0);
+
+    await expect(
+      uploadAppealFiles({
+        appealId: 10,
+        userId: 1,
+        roles: ["MEMBER"],
+        files: [
+          {
+            fileName: "fake-image.png",
+            mimeType: "image/png",
+            base64Content: Buffer.from("%PDF-1.7\n").toString("base64"),
+          },
+        ],
+      }),
+    ).rejects.toThrow("FILE_SIGNATURE_MISMATCH");
+
+    expect(mockedRepo.insertAppealFile).not.toHaveBeenCalled();
+  });
+
   it("does not transition intake status when submitter uploads evidence", async () => {
     const now = new Date().toISOString();
     mockedRepo.findAppealById.mockResolvedValue({
@@ -146,7 +181,7 @@ describe("appeal service", () => {
         {
           fileName: "evidence.pdf",
           mimeType: "application/pdf",
-          base64Content: Buffer.from("data").toString("base64"),
+          base64Content: Buffer.from("%PDF-1.7\n").toString("base64"),
         },
       ],
     });

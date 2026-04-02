@@ -104,6 +104,7 @@ const handleAppealError = (error: unknown, response: Response): boolean => {
     "TOO_MANY_FILES",
     "UNSUPPORTED_FILE_TYPE",
     "FILE_TOO_LARGE",
+    "FILE_SIGNATURE_MISMATCH",
     "INVALID_BASE64_FILE",
   ]);
 
